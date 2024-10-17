@@ -1,19 +1,36 @@
 "use client";
+import apiClient from "@/config/apiClient";
 import useAuthStore from "@/store/authStore";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const router = useRouter();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useAuthStore();
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
 
-    if (email === "admin@gmail.com") {
-      login(
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-      );
+    try {
+      const response = await apiClient.post("/users/login", {
+        username,
+        password,
+      });
+      const data = response.data;
+
+      if (data && data.user && data.accessToken) {
+        login(data.user, data.accessToken);
+        router.push("/");
+      } else {
+        setError("Invalid response from server.");
+      }
+    } catch (error) {
+      setError("Invalid username or password.");
+      console.error("Error during login:", error);
     }
   };
 
@@ -25,16 +42,16 @@ const Login = () => {
           <div className="mb-4">
             <label
               className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="email"
+              htmlFor="username"
             >
-              Email
+              Username
             </label>
             <input
-              type="email"
-              id="email"
+              type="text"
+              id="username"
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
@@ -56,6 +73,7 @@ const Login = () => {
             />
           </div>
 
+          {error && <p className="text-red-500 text-center">{error}</p>}
           <div className="flex items-center justify-between">
             <button
               type="submit"

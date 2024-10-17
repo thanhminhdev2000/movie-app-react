@@ -1,46 +1,59 @@
 "use client";
 
-import Header from "@/components/Header";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect } from "react";
 import HomeLayout from "../components/HomeLayout";
+import useAuthStore from "@/store/authStore";
+import apiClient from "@/config/apiClient";
 
 const Home = () => {
-  const router = useRouter();
-  const [jwtToken, setJwtToken] = useState("");
+  const { login, logout } = useAuthStore();
+
+  useEffect(() => {
+    const getUserProfile = async () => {
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        if (!accessToken) {
+          return;
+        }
+
+        const response = await apiClient.get("/users/profile", {
+          withCredentials: true,
+        });
+
+        const data = response.data;
+
+        if (data.id && accessToken) {
+          login(data, accessToken);
+        }
+      } catch {
+        logout();
+      }
+    };
+
+    getUserProfile();
+  }, [login, logout]);
 
   return (
-    <div className="flex flex-col mt-3">
-      {!jwtToken ? (
-        <button
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-20 self-end"
-          onClick={() => router.push("/login")}
-        >
-          Login
-        </button>
-      ) : (
-        <Header userName="Minh" />
-      )}
+    <HomeLayout>
+      <h2 className="text-4xl text-center font-bold">
+        Find a movie to watch tonight!
+      </h2>
 
-      <HomeLayout>
-        <h2 className="text-4xl text-center font-bold">
-          Find a movie to watch tonight!
-        </h2>
+      <hr className="mt-4" />
 
-        <hr className="mt-4" />
-
-        <div className="flex justify-center">
-          <Image
-            src="/ticket.jpg"
-            alt="Movie Ticket"
-            width={300}
-            height={200}
-            className="rounded"
-          />
-        </div>
-      </HomeLayout>
-    </div>
+      <div className="flex justify-center">
+        <Image
+          src="/ticket.jpg"
+          alt="Movie Ticket"
+          width="0"
+          height="0"
+          sizes="100vw"
+          className="w-1/4 h-auto"
+          priority
+        />
+      </div>
+    </HomeLayout>
   );
 };
 

@@ -1,22 +1,23 @@
+import { User } from "@/types";
 import { create } from "zustand";
 
 interface AuthState {
-  accessToken: string | null;
-  login: (token: string) => void;
+  user: User | null;
+  login: (user: User | null, accessToken: string) => void;
   logout: () => void;
 }
 
 const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
-  
-  login: (token: string) => set({
-    accessToken: token
-  }),
-  
+  user: null,
+  login: (user: User | null, accessToken: string) => {
+    set({ user });
+    localStorage.setItem("accessToken", accessToken);
+  },
+
   logout: () => {
-    set({ accessToken: null });
-    document.cookie = "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-  }
+    set({ user: null });
+    localStorage.removeItem("accessToken");
+  },
 }));
 
 export default useAuthStore;
